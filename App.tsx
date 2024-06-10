@@ -40,7 +40,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="HomeTabs">
-        <Stack.Screen name="Toate Rezervarile" component={HomeTabs} options={{ headerShown: true, gestureEnabled: false }} />
+        <Stack.Screen name="Toate Rezervarile" component={HomeTabs} options={{ headerShown: false, gestureEnabled: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
