@@ -33,7 +33,12 @@ const ReservationList = () => {
   const [reservationCount, setReservationCount] = useState<number>(0);
   const [reservationsStopped, setReservationsStopped] = useState<boolean>(false);
 
+  const [pin, setPin] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const correctPin = '239674'; // Pinul corect
+
   useEffect(() => {
+    // Fetch initial reservations
     const fetchReservations = async () => {
       try {
         const response = await fetch('https://lavial.icu/reservations');
@@ -53,6 +58,35 @@ const ReservationList = () => {
   }, []);
 
   useEffect(() => {
+    // Check reservation status when the component loads and when filterDate changes
+    if (filterDate) {
+      checkReservationStatus(filterDate);
+    }
+  }, [filterDate]);
+
+  const checkReservationStatus = async (date: Date) => {
+    try {
+      const response = await fetch('https://lavial.icu/check-reservation-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ date: date.toISOString() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch reservation status');
+      }
+
+      const data = await response.json();
+      setReservationsStopped(data.stopped);
+    } catch (error) {
+      console.error('Error checking reservation status:', error);
+      Alert.alert('Error', 'A apărut o eroare la verificarea stării rezervărilor.');
+    }
+  };
+
+  useEffect(() => {
     if (filterDate) {
       const count = reservations.filter(
         (reservation) => new Date(reservation.date).toLocaleDateString('ro-RO') === filterDate.toLocaleDateString('ro-RO')
@@ -63,28 +97,22 @@ const ReservationList = () => {
     }
   }, [filterDate, reservations]);
 
-  const onDateChange = async (event: any, selectedDate?: Date) => {
+  const handlePinSubmit = () => {
+    if (pin === correctPin) {
+      setIsAuthenticated(true);
+    } else {
+      Alert.alert('Error', 'Pin incorect!');
+    }
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || filterDate;
     setShowDatePicker(false);
-    setFilterDate(currentDate);
-
-    // Verifică starea rezervărilor pentru data selectată
-    try {
-        const response = await fetch('http://localhost:3000/check-reservation-status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ date: currentDate.toISOString() }),
-        });
-
-        const data = await response.json();
-        setReservationsStopped(data.stopped);
-    } catch (error) {
-        console.error('Error checking reservation status:', error);
-        Alert.alert('Error', 'A apărut o eroare la verificarea stării rezervărilor.');
+    if (currentDate) {
+      setFilterDate(currentDate);
+      checkReservationStatus(currentDate); // Verifică starea rezervărilor pentru noua dată selectată
     }
-};
+  };
 
   const resetFilters = () => {
     setFilterDate(undefined);
@@ -95,34 +123,33 @@ const ReservationList = () => {
 
   const toggleReservations = async () => {
     if (!filterDate) {
-        Alert.alert('Error', 'Selectați o dată pentru a opri/pornir rezervările');
-        return;
+      Alert.alert('Error', 'Selectați o dată pentru a opri/pornir rezervările');
+      return;
     }
-
 
     const action = reservationsStopped ? 'start' : 'stop';
     try {
-        const response = await fetch(`https://lavial.icu/${action}-reservation`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                date: filterDate.toISOString(), // Trimitem data selectată către backend
-            }),
-        });
+      const response = await fetch(`https://lavial.icu/${action}-reservation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: filterDate.toISOString(),
+        }),
+      });
 
-        if (!response.ok) {
-            throw new Error(`Failed to ${action} reservations`);
-        }
+      if (!response.ok) {
+        throw new Error(`Failed to ${action} reservations`);
+      }
 
-        setReservationsStopped(!reservationsStopped);
-        Alert.alert('Success', `Rezervările au fost ${reservationsStopped ? 'pornite' : 'oprite'} pentru data selectată`);
+      setReservationsStopped(!reservationsStopped);
+      Alert.alert('Success', `Rezervările au fost ${reservationsStopped ? 'pornite' : 'oprite'} pentru data selectată`);
     } catch (error) {
-        console.error(`Error ${action}ping reservations:`, error);
-        Alert.alert('Error', `A apărut o eroare la ${action}ping rezervărilor`);
+      console.error(`Error ${action}ping reservations:`, error);
+      Alert.alert('Error', `A apărut o eroare la ${action}ping rezervărilor`);
     }
-};
+  };
 
   const filteredReservations = reservations.filter((reservation) => {
     const matchesDate = !filterDate || new Date(reservation.date).toLocaleDateString('ro-RO') === filterDate.toLocaleDateString('ro-RO');
@@ -131,6 +158,25 @@ const ReservationList = () => {
     const matchesToCity = toCity === '' || reservation.to.toLowerCase().includes(toCity.toLowerCase());
     return matchesDate && matchesSearch && matchesFromCity && matchesToCity;
   });
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.pinContainer}>
+        <Text style={styles.pinLabel}>Introduceti PIN-ul:</Text>
+        <TextInput
+          style={styles.pinInput}
+          value={pin}
+          onChangeText={setPin}
+          keyboardType="numeric"
+          secureTextEntry
+          maxLength={6}
+        />
+        <TouchableOpacity onPress={handlePinSubmit} style={styles.pinButton}>
+          <Text style={styles.pinButtonText}>Autentificare</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -224,7 +270,6 @@ const ReservationList = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -241,6 +286,39 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#666',
+  },
+  pinContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f8fc',
+  },
+  pinLabel: {
+    fontSize: 20,
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  pinInput: {
+    width: '50%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    textAlign: 'center',
+    fontSize: 20,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+  },
+  pinButton: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pinButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   counterContainer: {
     marginBottom: 15,

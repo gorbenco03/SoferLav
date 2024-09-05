@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ReservationList from './screens/ReservationPage';
 import ScanPage from './screens/ScanPage';
+import PriceEditPage from './screens/PriceEditPage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,6 +33,7 @@ function HomeTabs() {
     >
       <Tab.Screen name="Rezervări" component={ReservationList} />
       <Tab.Screen name="Scanează QR" component={ScanPage} />
+      <Tab.Screen name="Preturi" component={PriceEditPage} />
     </Tab.Navigator>
   );
 }
