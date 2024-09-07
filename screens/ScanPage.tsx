@@ -26,7 +26,7 @@ export default function ScanPage() {
     try {
       const parsedData = JSON.parse(data);
       console.log('Parsed data:', parsedData);
-      const response = await axios.post("http://192.168.3.35:3000/verify-ticket", { uniq_id: parsedData.uniq_id });
+      const response = await axios.post("https:/lavial.icu/verify-ticket", { uniq_id: parsedData.uniq_id });
       console.log('Server response:', response);
 
       if (response.status === 200) {

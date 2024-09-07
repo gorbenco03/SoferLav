@@ -10,7 +10,7 @@
           "recordAudioAndroid": true
         }
       ]
-    ], 
+    ],
     "slug": "SoferLav",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -26,20 +26,30 @@
       "bundleIdentifier": "com.yourcompany.SoferLav",
       "config": {
         "usesNonExemptEncryption": false
-    },
-    "infoPlist": {
+      },
+      "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to scan QR codes on tickets."
-      } ,
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff",
-        "permissions": ["CAMERA"]
+      },
+      "android": {
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/adaptive-icon.png",
+          "backgroundColor": "#ffffff",
+          "permissions": [
+            "CAMERA"
+          ]
+        }
+      },
+      "web": {
+        "favicon": "./assets/favicon.png"
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "eas": {
+        "projectId": "6f5253be-e81a-4b37-8f82-c98704ee9aaf"
+      }
+    },
+    "android": {
+      "package": "com.yourcompany.SoferLav"
     }
   }
-}
 }
