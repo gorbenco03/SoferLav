@@ -16,17 +16,19 @@ export default function ScanPage() {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
     };
-
     getCameraPermissions();
   }, []);
 
   const handleBarCodeScanned = async ({ type, data }: any) => {
     setScanned(true);
     console.log(`Scanned barcode of type ${type} with data ${data}`);
+
     try {
       const parsedData = JSON.parse(data);
       console.log('Parsed data:', parsedData);
-      const response = await axios.post("https:/lavial.icu/verify-ticket", { uniq_id: parsedData.uniq_id });
+
+      // Trimite la backend `uniq_id` extras din codul QR
+      const response = await axios.post("https://lavial.icu/verify/verify-ticket", { uniq_id: parsedData.uniq_id });
       console.log('Server response:', response);
 
       if (response.status === 200) {
@@ -69,13 +71,44 @@ export default function ScanPage() {
                   {verificationStatus === 'success' ? (
                     <>
                       <Ionicons name="checkmark-circle" size={100} color="green" />
-                      <Text style={styles.resultText}>Done</Text>
+                      <Text style={styles.resultText}>Bilet valid!</Text>
+
                       {reservationDetails ? (
                         <View style={styles.reservationDetails}>
-                          <Text style={styles.detailText}>From: {reservationDetails.from}</Text>
-                          <Text style={styles.detailText}>To: {reservationDetails.to}</Text>
-                          <Text style={styles.detailText}>Date: {new Date(reservationDetails.date).toLocaleDateString()}</Text>
-                          <Text style={styles.detailText}>Name: {reservationDetails.name} {reservationDetails.surname}</Text>
+                          {/* Aici accesăm structura din backend */}
+                          <Text style={styles.detailText}>
+                            From: {reservationDetails.tripDetails?.from} ({reservationDetails.tripDetails?.fromStation})
+                          </Text>
+                          <Text style={styles.detailText}>
+                            To: {reservationDetails.tripDetails?.to} ({reservationDetails.tripDetails?.toStation})
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Departure Time: {reservationDetails.tripDetails?.departureTime}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Arrival Time: {reservationDetails.tripDetails?.arrivalTime}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Date: {new Date(reservationDetails.tripDetails?.date).toLocaleDateString()}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Seats: {reservationDetails.tripDetails?.seats?.join(', ')}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Name: {reservationDetails.passenger?.name} {reservationDetails.passenger?.surname}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Email: {reservationDetails.passenger?.email}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Phone: {reservationDetails.passenger?.phone}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Is Student: {reservationDetails.passenger?.isStudent ? 'Yes' : 'No'}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            Price: {reservationDetails.price}
+                          </Text>
                         </View>
                       ) : (
                         <Text style={styles.resultText}>No reservation details available</Text>
@@ -84,13 +117,21 @@ export default function ScanPage() {
                   ) : (
                     <>
                       <Ionicons name="close-circle" size={100} color="red" />
-                      <Text style={styles.resultText}>Error</Text>
+                      <Text style={styles.resultText}>Eroare la validare</Text>
                     </>
                   )}
                 </View>
               )}
+
               {scanned && (
-                <TouchableOpacity style={styles.scanAgainButton} onPress={() => { setScanned(false); setVerificationStatus(null); setReservationDetails(null); }}>
+                <TouchableOpacity
+                  style={styles.scanAgainButton}
+                  onPress={() => {
+                    setScanned(false);
+                    setVerificationStatus(null);
+                    setReservationDetails(null);
+                  }}
+                >
                   <Text style={styles.scanAgainButtonText}>Tap to Scan Again</Text>
                 </TouchableOpacity>
               )}
@@ -106,7 +147,6 @@ export default function ScanPage() {
 }
 
 const styles = StyleSheet.create({
-  
   container: {
     flex: 1,
     backgroundColor: '#f0f0f0',
